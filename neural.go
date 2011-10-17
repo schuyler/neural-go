@@ -4,18 +4,20 @@ import (
     "rand"
     "time"
     "fmt"
+    "json"
+    "io"
 )
 
 type Layer struct {
-    weight [][]float64
+    Weight [][]float64
+    Bias []float64
     delta [][]float64
-    bias []float64
     value []float64
 }
 
 type Network struct {
-    hidden *Layer 
-    output *Layer
+    Hidden *Layer 
+    Output *Layer
 }
 
 func randomWeight () float64 {
@@ -24,18 +26,18 @@ func randomWeight () float64 {
 
 func newLayer(inputs int, nodes int) (layer *Layer) {
     layer = new(Layer)
-    layer.weight = make([][]float64, nodes)
+    layer.Weight = make([][]float64, nodes)
     layer.delta = make([][]float64, nodes)
     for i := 0; i < nodes; i++ {
-        layer.weight[i] = make([]float64, inputs)
+        layer.Weight[i] = make([]float64, inputs)
         layer.delta[i] = make([]float64, inputs)
         for j := 0; j < inputs; j++ {
-            layer.weight[i][j] = randomWeight()
+            layer.Weight[i][j] = randomWeight()
         }
     }
-    layer.bias = make([]float64, nodes)
+    layer.Bias = make([]float64, nodes)
     for i := 0; i < nodes; i++ {
-        layer.bias[i] = randomWeight()
+        layer.Bias[i] = randomWeight()
     }
     layer.value = make([]float64, nodes)
     return
@@ -43,16 +45,16 @@ func newLayer(inputs int, nodes int) (layer *Layer) {
 
 func NewNetwork(inputs int, hiddens int, outputs int) (net *Network) {
     net = new(Network)
-    net.hidden = newLayer(inputs, hiddens)
-    net.output = newLayer(hiddens, outputs)
+    net.Hidden = newLayer(inputs, hiddens)
+    net.Output = newLayer(hiddens, outputs)
     return
 }
 
 func (layer *Layer) feedforward(input []float64) []float64 {
     for i := 0; i < len(layer.value); i++ {
-        sum := layer.bias[i]
+        sum := layer.Bias[i]
         for j := 0; j < len(input); j++ {
-            sum += layer.weight[i][j] * input[j]
+            sum += layer.Weight[i][j] * input[j]
         }
         layer.value[i] = 1.0 / (1.0 + math.Pow(math.E, -sum))
     }
@@ -60,42 +62,54 @@ func (layer *Layer) feedforward(input []float64) []float64 {
 }
 
 func (net *Network) Activate(input []float64) (result []float64) {
-    hidden := net.hidden.feedforward(input)
-    output := net.output.feedforward(hidden)
+    hidden := net.Hidden.feedforward(input)
+    output := net.Output.feedforward(hidden)
     result = make([]float64, len(output))
     copy(result, output)
     return
 }
 
 func (layer *Layer) backpropagate (input []float64, error []float64, rate float64, accel float64) (residual []float64) {
-    residual = make([]float64, len(layer.weight[0]))
-    for i, weight := range layer.weight {
+    residual = make([]float64, len(layer.Weight[0]))
+    for i, weight := range layer.Weight {
         delta := error[i] * layer.value[i] * (1.0 - layer.value[i])
         for j := 0; j < len(weight); j++ {
             residual[j] += delta * weight[j]
             layer.delta[i][j] = rate * delta * input[j] + accel * layer.delta[i][j]
             weight[j] += layer.delta[i][j]
         }
-        layer.bias[i] += rate * delta 
+        layer.Bias[i] += rate * delta 
     }
     return
 }
 
 func (net *Network) Train(input []float64, expected []float64, rate float64, accel float64) {
-    error := make([]float64, len(net.output.value))
+    error := make([]float64, len(net.Output.value))
     for i := 0; i < len(error); i++ {
-        error[i] = expected[i] - net.output.value[i]
+        error[i] = expected[i] - net.Output.value[i]
     }
-    residual := net.output.backpropagate(net.hidden.value, error, rate, accel)
-    net.hidden.backpropagate(input, residual, rate, accel)
+    residual := net.Output.backpropagate(net.Hidden.value, error, rate, accel)
+    net.Hidden.backpropagate(input, residual, rate, accel)
 }
 
 func (net *Network) String() string {
     return fmt.Sprintf(
         "Hidden=[Weights=%v, Bias=%v]\n" +
         "Output=[Weights=%v, Bias=%v]",
-        net.hidden.weight, net.hidden.bias,
-        net.output.weight, net.output.bias)
+        net.Hidden.Weight, net.Hidden.Bias,
+        net.Output.Weight, net.Output.Bias)
+}
+
+func (net *Network) Save(w io.Writer) {
+    enc := json.NewEncoder(w)
+    enc.Encode(net)
+}
+
+func LoadNetwork(r io.Reader) *Network {
+    net := new(Network)
+    dec := json.NewDecoder(r)
+    dec.Decode(net)
+    return net
 }
 
 func MeanSquaredError (result []float64, expected []float64) float64 {
