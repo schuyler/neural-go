@@ -24,13 +24,19 @@ func randomWeight () float64 {
     return rand.Float64() * 2.0 - 1.0
 }
 
+func (layer *Layer) initialize () {
+    layer.value = make([]float64, len(layer.Weight))
+    layer.delta = make([][]float64, len(layer.Weight))
+    for i := 0; i < len(layer.delta); i++ {
+        layer.delta[i] = make([]float64, len(layer.Weight[0]))
+    }
+}
+
 func newLayer(inputs int, nodes int) (layer *Layer) {
     layer = new(Layer)
     layer.Weight = make([][]float64, nodes)
-    layer.delta = make([][]float64, nodes)
     for i := 0; i < nodes; i++ {
         layer.Weight[i] = make([]float64, inputs)
-        layer.delta[i] = make([]float64, inputs)
         for j := 0; j < inputs; j++ {
             layer.Weight[i][j] = randomWeight()
         }
@@ -39,7 +45,7 @@ func newLayer(inputs int, nodes int) (layer *Layer) {
     for i := 0; i < nodes; i++ {
         layer.Bias[i] = randomWeight()
     }
-    layer.value = make([]float64, nodes)
+    layer.initialize()
     return
 }
 
@@ -109,6 +115,8 @@ func LoadNetwork(r io.Reader) *Network {
     net := new(Network)
     dec := json.NewDecoder(r)
     dec.Decode(net)
+    net.Hidden.initialize()
+    net.Output.initialize()
     return net
 }
 
