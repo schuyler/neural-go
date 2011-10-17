@@ -5,7 +5,9 @@ GOFILES=neural.go
 
 include $(GOROOT)/src/Make.pkg
 
-examples: xor mnist
+EXAMPLES=xor mnist
+
+examples: $(EXAMPLES)
 
 xor: _obj/neural.a xor.go
 	$(GC) -I _obj xor.go
@@ -16,4 +18,4 @@ mnist: _obj/neural.a mnist.go
 	$(LD) -L _obj -o mnist mnist.$(O)
 
 realclean: clean
-	rm -f xor mnist
+	rm -f $(EXAMPLES) xor.json

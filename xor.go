@@ -2,6 +2,7 @@ package main
 import (
     "neural"
     "fmt"
+    "os"
 )
 
 func main () {
@@ -30,4 +31,6 @@ func main () {
                  " Expected =", sample[2],
                    " Result =", result[0]) 
     }
+    file, _ := os.Create("xor.json")
+    net.Save(file)
 }
