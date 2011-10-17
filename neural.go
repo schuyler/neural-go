@@ -8,6 +8,7 @@ import (
 
 type Layer struct {
     weight [][]float64
+    delta [][]float64
     bias []float64
     value []float64
 }
@@ -24,8 +25,10 @@ func randomWeight () float64 {
 func newLayer(inputs int, nodes int) (layer *Layer) {
     layer = new(Layer)
     layer.weight = make([][]float64, nodes)
+    layer.delta = make([][]float64, nodes)
     for i := 0; i < nodes; i++ {
         layer.weight[i] = make([]float64, inputs)
+        layer.delta[i] = make([]float64, inputs)
         for j := 0; j < inputs; j++ {
             layer.weight[i][j] = randomWeight()
         }
@@ -64,26 +67,27 @@ func (net *Network) Activate(input []float64) (result []float64) {
     return
 }
 
-func (layer *Layer) backpropagate (input []float64, error []float64, rate float64) (residual []float64) {
+func (layer *Layer) backpropagate (input []float64, error []float64, rate float64, accel float64) (residual []float64) {
     residual = make([]float64, len(layer.weight[0]))
     for i, weight := range layer.weight {
         delta := error[i] * layer.value[i] * (1.0 - layer.value[i])
         for j := 0; j < len(weight); j++ {
             residual[j] += delta * weight[j]
-            weight[j] += rate * delta * input[j]
+            layer.delta[i][j] = rate * delta * input[j] + accel * layer.delta[i][j]
+            weight[j] += layer.delta[i][j]
         }
         layer.bias[i] += rate * delta 
     }
     return
 }
 
-func (net *Network) Train(input []float64, expected []float64, rate float64) {
+func (net *Network) Train(input []float64, expected []float64, rate float64, accel float64) {
     error := make([]float64, len(net.output.value))
     for i := 0; i < len(error); i++ {
         error[i] = expected[i] - net.output.value[i]
     }
-    residual := net.output.backpropagate(net.hidden.value, error, rate)
-    net.hidden.backpropagate(input, residual, rate)
+    residual := net.output.backpropagate(net.hidden.value, error, rate, accel)
+    net.hidden.backpropagate(input, residual, rate, accel)
 }
 
 func (net *Network) String() string {

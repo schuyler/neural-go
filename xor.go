@@ -14,7 +14,7 @@ func main () {
         best = 0.0
         for _, sample := range training {
             result := net.Activate(sample[0:2])
-            net.Train(sample[0:2], sample[2:], 0.75)
+            net.Train(sample[0:2], sample[2:], 0.75, 0.5)
             err := neural.MeanSquaredError(result, sample[2:])
             if err > best { best = err }
         }
