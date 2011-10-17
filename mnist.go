@@ -27,6 +27,17 @@ func ReadMNISTImages (r io.Reader) (images [][]byte) {
     return
 }
 
+func ImageString (buffer []byte, height, width int) (out string) {
+    for i, y := 0, 0; y < height; y++ {
+        for x := 0; x < width; x++ {
+            if buffer[i] > 128 { out += "#" } else { out += " " }
+            i++
+        }
+        out += "\n"
+    }
+    return
+}
+
 func OpenFile (path string) *os.File {
     file, err := os.Open(path)
     if (err != nil) {
@@ -40,4 +51,7 @@ func main () {
     labels := ReadMNISTLabels(OpenFile(os.Args[1]))
     images := ReadMNISTImages(OpenFile(os.Args[2]))
     fmt.Println("Labels =", len(labels), "Images =", len(images), "Image Size =", len(images[0]))
+    for _, image := range images {
+        fmt.Println(ImageString(image, 28, 28))
+    }
 }
