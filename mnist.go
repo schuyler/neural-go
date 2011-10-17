@@ -50,6 +50,11 @@ func OpenFile (path string) *os.File {
 func main () {
     const numLabels = 10
     const epsilon = 0.001
+    const hiddenNodes = 100
+    const pixelRange = 255
+    const learningRate = 0.75
+    const momentum = 0.25
+    const dumpFile = "mnist.json"
 
     labelData := ReadMNISTLabels(OpenFile(os.Args[1]))
     imageData, width, height := ReadMNISTImages(OpenFile(os.Args[2]))
@@ -64,19 +69,25 @@ func main () {
     for i, vector := range imageData { 
         images[i] = make([]float64, len(vector))
         for j := 0; j < len(images[i]); j++ {
-            images[i][j] = float64(vector[j])/255.0
+            images[i][j] = float64(vector[j])/pixelRange
         }
     }
 
-    neural.SeedRandom()
-    net := neural.NewNetwork(width * height, 100, numLabels)
+    var net *neural.Network
+    if file, err := os.Open(dumpFile); err != nil {
+        neural.SeedRandom()
+        net = neural.NewNetwork(width * height, hiddenNodes, numLabels)
+    } else {
+        net = neural.LoadNetwork(file)
+    }
+
     epoch, best := 0, epsilon;
     for ; best >= epsilon; epoch++ {
         best = 0.0
         for i, expected := range labels {
             input := images[i]
             result := net.Activate(input)
-            net.Train(input, expected, 0.75, 0.25)
+            net.Train(input, expected, learningRate, momentum)
             err := neural.MeanSquaredError(result, expected)
             if err > best { best = err }
             if i % 1000 == 0 {
@@ -84,5 +95,7 @@ func main () {
             }
         }
         fmt.Println("\rEpoch #", epoch, "@ MSE =", best)
+        file, _ := os.Create(dumpFile)
+        net.Save(file)
     }
 }
