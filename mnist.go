@@ -5,6 +5,7 @@ import (
     "io"
     "os"
     "fmt"
+    "flag"
 )
 
 func ReadMNISTLabels (r io.Reader) (labels []byte) {
@@ -54,10 +55,18 @@ func main () {
     const pixelRange = 255
     const learningRate = 0.75
     const momentum = 0.25
-    const dumpFile = "mnist.json"
 
-    labelData := ReadMNISTLabels(OpenFile(os.Args[1]))
-    imageData, width, height := ReadMNISTImages(OpenFile(os.Args[2]))
+    labelFile := flag.String("l", nil, "label file")
+    imageFile := flag.String("i", nil, "image file")
+    dumpFile  := flag.String("d", "mnist.json", "dump file")
+
+    if labelFile == nil || imageFile == nil {
+        flag.Usage()
+        os.Exit(-2)
+    }
+
+    labelData := ReadMNISTLabels(OpenFile(labelFile))
+    imageData, width, height := ReadMNISTImages(OpenFile(imageFile))
 
     labels := make([][]float64, len(labelData))
     for i, value := range labelData {
