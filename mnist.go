@@ -56,17 +56,17 @@ func main () {
     const learningRate = 0.75
     const momentum = 0.25
 
-    labelFile := flag.String("l", nil, "label file")
-    imageFile := flag.String("i", nil, "image file")
+    labelFile := flag.String("l", "", "label file")
+    imageFile := flag.String("i", "", "image file")
     dumpFile  := flag.String("d", "mnist.json", "dump file")
 
-    if labelFile == nil || imageFile == nil {
+    if *labelFile == "" || *imageFile == "" {
         flag.Usage()
         os.Exit(-2)
     }
 
-    labelData := ReadMNISTLabels(OpenFile(labelFile))
-    imageData, width, height := ReadMNISTImages(OpenFile(imageFile))
+    labelData := ReadMNISTLabels(OpenFile(*labelFile))
+    imageData, width, height := ReadMNISTImages(OpenFile(*imageFile))
 
     labels := make([][]float64, len(labelData))
     for i, value := range labelData {
@@ -83,7 +83,7 @@ func main () {
     }
 
     var net *neural.Network
-    if file, err := os.Open(dumpFile); err != nil {
+    if file, err := os.Open(*dumpFile); err != nil {
         neural.SeedRandom()
         net = neural.NewNetwork(width * height, hiddenNodes, numLabels)
     } else {
@@ -104,7 +104,7 @@ func main () {
             }
         }
         fmt.Println("\rEpoch #", epoch, "@ MSE =", best)
-        file, _ := os.Create(dumpFile)
+        file, _ := os.Create(*dumpFile)
         net.Save(file)
     }
 }
