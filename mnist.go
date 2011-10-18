@@ -6,6 +6,7 @@ import (
     "os"
     "fmt"
     "flag"
+    "runtime/pprof"
 )
 
 func ReadMNISTLabels (r io.Reader) (labels []byte) {
@@ -59,6 +60,7 @@ func main () {
     labelFile := flag.String("l", "", "label file")
     imageFile := flag.String("i", "", "image file")
     dumpFile  := flag.String("d", "mnist.json", "dump file")
+    memProfile := flag.String("m", "", "memory profile")
     flag.Parse()
 
     if *labelFile == "" || *imageFile == "" {
@@ -89,6 +91,13 @@ func main () {
         net = neural.NewNetwork(width * height, hiddenNodes, numLabels)
     } else {
         net = neural.LoadNetwork(file)
+    }
+
+    if *memProfile != "" {
+        f, _ := os.Create(*memProfile)
+        pprof.WriteHeapProfile(f)
+        f.Close()
+        return
     }
 
     epoch, best := 0, epsilon;
