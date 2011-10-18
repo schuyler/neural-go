@@ -71,20 +71,6 @@ func main () {
     labelData := ReadMNISTLabels(OpenFile(*labelFile))
     imageData, width, height := ReadMNISTImages(OpenFile(*imageFile))
 
-    labels := make([][]float64, len(labelData))
-    for i, value := range labelData {
-        labels[i] = make([]float64, numLabels)
-        labels[i][value] = 1.0
-    }
-
-    images := make([][]float64, len(imageData))
-    for i, vector := range imageData { 
-        images[i] = make([]float64, len(vector))
-        for j := 0; j < len(images[i]); j++ {
-            images[i][j] = float64(vector[j])/pixelRange
-        }
-    }
-
     var net *neural.Network
     if file, err := os.Open(*dumpFile); err != nil {
         neural.SeedRandom()
@@ -100,20 +86,30 @@ func main () {
         return
     }
 
-    epoch, best := 0, epsilon;
-    for ; best >= epsilon; epoch++ {
-        best = 0.0
-        for i, expected := range labels {
-            input := images[i]
+    input := make([]float64, width * height)
+    expected := make([]float64, numLabels)
+
+    epoch, worst, overall := 0, epsilon, 0.0
+    for ; worst >= epsilon; epoch++ {
+        worst, overall = 0.0, 0.0
+        for i, labelIndex := range labelData {
+            for j := 0; j < len(input); j++ {
+                input[j] = float64(imageData[i][j])/pixelRange * 0.9 + 0.1
+            }
+            for j := 0; j < len(expected); j++ {
+                expected[j] = 0.1
+                if j == int(labelIndex) { expected[j] = 0.9 }
+            }
             result := net.Activate(input)
             net.Train(input, expected, learningRate, momentum)
             err := neural.MeanSquaredError(result, expected)
-            if err > best { best = err }
+            if err > worst { worst = err }
+            overall += err
             if i % 1000 == 0 {
-                fmt.Printf("\rEpoch # %d: %d%%", epoch, int(float32(i)/float32(len(labels))*100.0))
+                fmt.Printf("\rEpoch #%d: %d%% (%.3f MSE)", epoch, int(float32(i)/float32(len(labelData))*100.0), overall/float32(i))
             }
         }
-        fmt.Println("\rEpoch #", epoch, "@ MSE =", best)
+        fmt.Printf("\rEpoch #%d @ MSE = %.3f, worst = %.3f", epoch, overall/float32(len(labelData)), worst)
         file, _ := os.Create(*dumpFile)
         net.Save(file)
     }
