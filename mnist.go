@@ -54,8 +54,8 @@ func main () {
     const epsilon = 0.001
     const hiddenNodes = 100
     const pixelRange = 255
-    const learningRate = 0.75
-    const momentum = 0.25
+    const learningRate = 0.25
+    const momentum = 0
 
     labelFile := flag.String("l", "", "label file")
     imageFile := flag.String("i", "", "image file")
@@ -68,6 +68,7 @@ func main () {
         os.Exit(-2)
     }
 
+    fmt.Println("Loading image data...")
     labelData := ReadMNISTLabels(OpenFile(*labelFile))
     imageData, width, height := ReadMNISTImages(OpenFile(*imageFile))
 
@@ -76,6 +77,7 @@ func main () {
         neural.SeedRandom()
         net = neural.NewNetwork(width * height, hiddenNodes, numLabels)
     } else {
+        fmt.Println("Loading network...")
         net = neural.LoadNetwork(file)
     }
 
@@ -106,10 +108,10 @@ func main () {
             if err > worst { worst = err }
             overall += err
             if i % 1000 == 0 {
-                fmt.Printf("\rEpoch #%d: %d%% (%.3f MSE)", epoch, int(float32(i)/float32(len(labelData))*100.0), overall/float64(i))
+                fmt.Printf("\rEpoch #%d: %d%% (%.5f MSE)", epoch, int(float32(i)/float32(len(labelData))*100.0), overall/float64(i))
             }
         }
-        fmt.Printf("\rEpoch #%d @ MSE = %.3f, worst = %.3f", epoch, overall/float64(len(labelData)), worst)
+        fmt.Printf("\rEpoch #%d @ MSE = %.3f, worst = %.3f\n", epoch, overall/float64(len(labelData)), worst)
         file, _ := os.Create(*dumpFile)
         net.Save(file)
     }
