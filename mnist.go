@@ -59,6 +59,7 @@ func main () {
     labelFile := flag.String("l", "", "label file")
     imageFile := flag.String("i", "", "image file")
     dumpFile  := flag.String("d", "mnist.json", "dump file")
+    flag.Parse()
 
     if *labelFile == "" || *imageFile == "" {
         flag.Usage()
