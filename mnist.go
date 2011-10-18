@@ -106,10 +106,10 @@ func main () {
             if err > worst { worst = err }
             overall += err
             if i % 1000 == 0 {
-                fmt.Printf("\rEpoch #%d: %d%% (%.3f MSE)", epoch, int(float32(i)/float32(len(labelData))*100.0), overall/float32(i))
+                fmt.Printf("\rEpoch #%d: %d%% (%.3f MSE)", epoch, int(float32(i)/float32(len(labelData))*100.0), overall/float64(i))
             }
         }
-        fmt.Printf("\rEpoch #%d @ MSE = %.3f, worst = %.3f", epoch, overall/float32(len(labelData)), worst)
+        fmt.Printf("\rEpoch #%d @ MSE = %.3f, worst = %.3f", epoch, overall/float64(len(labelData)), worst)
         file, _ := os.Create(*dumpFile)
         net.Save(file)
     }
