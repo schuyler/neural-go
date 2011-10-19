@@ -12,8 +12,8 @@ certain threshold for all training examples. Doesn't take long at all on my
 laptop, though.
 
 The other example is `mnist.go`, which is designed to train on the MNIST
-handwritten digits dataset. I've got it up to over 96% accuracy in a couple
-hundred epochs, like so:
+handwritten digits dataset. I've got it up to over 96% accuracy in a few
+epochs, like so:
 
     $ wget -r -np -Agz http://yann.lecun.com/exdb/mnist/
     $ mv yann.lecun/exdb/mnist/*.gz .

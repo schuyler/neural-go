@@ -6,7 +6,6 @@ import (
     "os"
     "fmt"
     "flag"
-    "runtime/pprof"
 )
 
 const numLabels = 10
@@ -66,7 +65,7 @@ func main () {
     testLabelFile := flag.String("tl", "", "test label file")
     testImageFile := flag.String("ti", "", "test image file")
     dumpFile  := flag.String("d", "mnist.json", "dump file")
-    memProfile := flag.String("m", "", "memory profile")
+    numSamples := flag.Int("n", -1, "number of samples (default=all)")
     flag.Parse()
 
     if *sourceLabelFile == "" || *sourceImageFile == "" {
@@ -74,31 +73,26 @@ func main () {
         os.Exit(-2)
     }
 
-    fmt.Println("Loading image data...")
+    fmt.Println("Loading training data...")
     labelData := ReadMNISTLabels(OpenFile(*sourceLabelFile))
     imageData, width, height := ReadMNISTImages(OpenFile(*sourceImageFile))
 
     var testLabelData []byte
     var testImageData [][]byte
     if *testLabelFile != "" && *testImageFile != "" {
+        fmt.Println("Loading test data...")
         testLabelData = ReadMNISTLabels(OpenFile(*testLabelFile))
         testImageData, _, _ = ReadMNISTImages(OpenFile(*testImageFile))
     }
 
     var net *neural.Network
     if file, err := os.Open(*dumpFile); err != nil {
+        fmt.Println("Creating network...")
         neural.SeedRandom()
         net = neural.NewNetwork(width * height, hiddenNodes, numLabels)
     } else {
         fmt.Println("Loading network...")
         net = neural.LoadNetwork(file)
-    }
-
-    if *memProfile != "" {
-        f, _ := os.Create(*memProfile)
-        pprof.WriteHeapProfile(f)
-        f.Close()
-        return
     }
 
     input := make([]neural.Float, width * height)
@@ -120,14 +114,20 @@ func main () {
             err := neural.MeanSquaredError(result, expected)
             if err > worst { worst = err }
             overall += err
-            if i % 1000 == 0 {
+            if i % int(len(labelData)/100) == 0 {
                 pctDone := int(float32(i)/float32(len(labelData))*100.0)
+                if *numSamples > 0 {
+                    pctDone = int(float32(i)/float32(*numSamples)*100.0)
+                }
                 fmt.Printf("\rEpoch #%d: %d%%, MSE = %.5f, worst = %.5f", epoch, pctDone, overall/neural.Float(i), worst)
+            }
+            if *numSamples > 0 && *numSamples == i {
+                break
             }
         }
 
-        correct, total := 0, 0
-        if testLabelData != nil {
+        correct, total := 0, len(testLabelData)
+        if total > 0 {
             for i, labelIndex := range testLabelData {
                 for j := 0; j < len(input); j++ {
                     input[j] = pixelWeight(testImageData[i][j])
@@ -143,13 +143,15 @@ func main () {
                 if selected == int(labelIndex) {
                     correct += 1
                 }
-                total += 1
+                if *numSamples > 0 && *numSamples == i {
+                    break
+                }
             }
         }
 
         fmt.Printf("\rEpoch #%d: done, MSE = %.5f, worst = %.5f", epoch, overall/neural.Float(len(labelData)), worst)
         if total > 0 {
-            fmt.Printf(", correct = %.2f%%", float32(correct)/float32(total))
+            fmt.Printf(", correct = %.2f%%", float32(correct)/float32(total)*100.0)
         }
         fmt.Printf("\n")
 
