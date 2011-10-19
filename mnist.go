@@ -9,6 +9,13 @@ import (
     "runtime/pprof"
 )
 
+const numLabels = 10
+const epsilon = 0.001
+const hiddenNodes = 100
+const pixelRange = 255
+const learningRate = 0.25
+const momentum = 0.10
+
 func ReadMNISTLabels (r io.Reader) (labels []byte) {
     header := [2]int32{}
     binary.Read(r, binary.BigEndian, &header)
@@ -49,28 +56,34 @@ func OpenFile (path string) *os.File {
     return file
 }
 
-func main () {
-    const numLabels = 10
-    const epsilon = 0.001
-    const hiddenNodes = 100
-    const pixelRange = 255
-    const learningRate = 0.25
-    const momentum = 0
+func pixelWeight (px byte) neural.Float {
+   return neural.Float(px) / pixelRange * 0.9 + 0.1 
+}
 
-    labelFile := flag.String("l", "", "label file")
-    imageFile := flag.String("i", "", "image file")
+func main () {
+    sourceLabelFile := flag.String("sl", "", "source label file")
+    sourceImageFile := flag.String("si", "", "source image file")
+    testLabelFile := flag.String("tl", "", "test label file")
+    testImageFile := flag.String("ti", "", "test image file")
     dumpFile  := flag.String("d", "mnist.json", "dump file")
     memProfile := flag.String("m", "", "memory profile")
     flag.Parse()
 
-    if *labelFile == "" || *imageFile == "" {
+    if *sourceLabelFile == "" || *sourceImageFile == "" {
         flag.Usage()
         os.Exit(-2)
     }
 
     fmt.Println("Loading image data...")
-    labelData := ReadMNISTLabels(OpenFile(*labelFile))
-    imageData, width, height := ReadMNISTImages(OpenFile(*imageFile))
+    labelData := ReadMNISTLabels(OpenFile(*sourceLabelFile))
+    imageData, width, height := ReadMNISTImages(OpenFile(*sourceImageFile))
+
+    var testLabelData []byte
+    var testImageData [][]byte
+    if *testLabelFile != "" && *testImageFile != "" {
+        testLabelData = ReadMNISTLabels(OpenFile(*testLabelFile))
+        testImageData, _, _ = ReadMNISTImages(OpenFile(*testImageFile))
+    }
 
     var net *neural.Network
     if file, err := os.Open(*dumpFile); err != nil {
@@ -96,7 +109,7 @@ func main () {
         worst, overall = 0.0, 0.0
         for i, labelIndex := range labelData {
             for j := 0; j < len(input); j++ {
-                input[j] = neural.Float(imageData[i][j])/pixelRange * 0.9 + 0.1
+                input[j] = pixelWeight(imageData[i][j])
             }
             for j := 0; j < len(expected); j++ {
                 expected[j] = 0.1
@@ -112,7 +125,34 @@ func main () {
                 fmt.Printf("\rEpoch #%d: %d%%, MSE = %.5f, worst = %.5f", epoch, pctDone, overall/neural.Float(i), worst)
             }
         }
-        fmt.Printf("\rEpoch #%d: done, MSE = %.5f, worst = %.5f\n", epoch, overall/neural.Float(len(labelData)), worst)
+
+        correct, total := 0, 0
+        if testLabelData != nil {
+            for i, labelIndex := range testLabelData {
+                for j := 0; j < len(input); j++ {
+                    input[j] = pixelWeight(testImageData[i][j])
+                }
+                result := net.Activate(input)
+                selected, maxValue := 0, neural.Float(-1.0)
+                for j, value := range result {
+                    if value >= maxValue {
+                        selected = j
+                        maxValue = value
+                    }
+                }
+                if selected == int(labelIndex) {
+                    correct += 1
+                }
+                total += 1
+            }
+        }
+
+        fmt.Printf("\rEpoch #%d: done, MSE = %.5f, worst = %.5f", epoch, overall/neural.Float(len(labelData)), worst)
+        if total > 0 {
+            fmt.Printf(", correct = %.2f%%", float32(correct)/float32(total))
+        }
+        fmt.Printf("\n")
+
         file, _ := os.Create(*dumpFile)
         net.Save(file)
     }
