@@ -88,15 +88,15 @@ func main () {
         return
     }
 
-    input := make([]float64, width * height)
-    expected := make([]float64, numLabels)
+    input := make([]neural.Float, width * height)
+    expected := make([]neural.Float, numLabels)
 
-    epoch, worst, overall := 0, epsilon, 0.0
+    epoch, worst, overall := 0, neural.Float(epsilon), neural.Float(0.0)
     for ; worst >= epsilon; epoch++ {
         worst, overall = 0.0, 0.0
         for i, labelIndex := range labelData {
             for j := 0; j < len(input); j++ {
-                input[j] = float64(imageData[i][j])/pixelRange * 0.9 + 0.1
+                input[j] = neural.Float(imageData[i][j])/pixelRange * 0.9 + 0.1
             }
             for j := 0; j < len(expected); j++ {
                 expected[j] = 0.1
@@ -109,10 +109,10 @@ func main () {
             overall += err
             if i % 1000 == 0 {
                 pctDone := int(float32(i)/float32(len(labelData))*100.0)
-                fmt.Printf("\rEpoch #%d: %d%%, MSE = %.5f, worst = %.5f", epoch, pctDone, overall/float64(i), worst)
+                fmt.Printf("\rEpoch #%d: %d%%, MSE = %.5f, worst = %.5f", epoch, pctDone, overall/neural.Float(i), worst)
             }
         }
-        fmt.Printf("\rEpoch #%d: done, MSE = %.5f, worst = %.5f\n", epoch, overall/float64(len(labelData)), worst)
+        fmt.Printf("\rEpoch #%d: done, MSE = %.5f, worst = %.5f\n", epoch, overall/neural.Float(len(labelData)), worst)
         file, _ := os.Create(*dumpFile)
         net.Save(file)
     }

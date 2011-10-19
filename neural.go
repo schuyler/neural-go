@@ -8,11 +8,13 @@ import (
     "io"
 )
 
+type Float float32
+
 type Layer struct {
-    Weight [][]float64
-    Bias []float64
-    delta [][]float64
-    value []float64
+    Weight [][]Float
+    Bias []Float
+    delta [][]Float
+    value []Float
 }
 
 type Network struct {
@@ -20,28 +22,28 @@ type Network struct {
     Output *Layer
 }
 
-func randomWeight () float64 {
-    return rand.Float64() * 2.0 - 1.0
+func randomWeight () Float {
+    return Float(rand.Float64() * 2.0 - 1.0)
 }
 
 func (layer *Layer) initialize () {
-    layer.value = make([]float64, len(layer.Weight))
-    layer.delta = make([][]float64, len(layer.Weight))
+    layer.value = make([]Float, len(layer.Weight))
+    layer.delta = make([][]Float, len(layer.Weight))
     for i := 0; i < len(layer.delta); i++ {
-        layer.delta[i] = make([]float64, len(layer.Weight[0]))
+        layer.delta[i] = make([]Float, len(layer.Weight[0]))
     }
 }
 
 func newLayer(inputs int, nodes int) (layer *Layer) {
     layer = new(Layer)
-    layer.Weight = make([][]float64, nodes)
+    layer.Weight = make([][]Float, nodes)
     for i := 0; i < nodes; i++ {
-        layer.Weight[i] = make([]float64, inputs)
+        layer.Weight[i] = make([]Float, inputs)
         for j := 0; j < inputs; j++ {
             layer.Weight[i][j] = randomWeight()
         }
     }
-    layer.Bias = make([]float64, nodes)
+    layer.Bias = make([]Float, nodes)
     for i := 0; i < nodes; i++ {
         layer.Bias[i] = randomWeight()
     }
@@ -56,27 +58,27 @@ func NewNetwork(inputs int, hiddens int, outputs int) (net *Network) {
     return
 }
 
-func (layer *Layer) feedforward(input []float64) []float64 {
+func (layer *Layer) feedforward(input []Float) []Float {
     for i := 0; i < len(layer.value); i++ {
         sum := layer.Bias[i]
         for j := 0; j < len(input); j++ {
             sum += layer.Weight[i][j] * input[j]
         }
-        layer.value[i] = 1.0 / (1.0 + math.Pow(math.E, -sum))
+        layer.value[i] = Float(1.0 / (1.0 + math.Pow(math.E, -float64(sum))))
     }
     return layer.value
 }
 
-func (net *Network) Activate(input []float64) (result []float64) {
+func (net *Network) Activate(input []Float) (result []Float) {
     hidden := net.Hidden.feedforward(input)
     output := net.Output.feedforward(hidden)
-    result = make([]float64, len(output))
+    result = make([]Float, len(output))
     copy(result, output)
     return
 }
 
-func (layer *Layer) backpropagate (input []float64, error []float64, rate float64, accel float64) (residual []float64) {
-    residual = make([]float64, len(layer.Weight[0]))
+func (layer *Layer) backpropagate (input []Float, error []Float, rate Float, accel Float) (residual []Float) {
+    residual = make([]Float, len(layer.Weight[0]))
     for i, weight := range layer.Weight {
         delta := error[i] * layer.value[i] * (1.0 - layer.value[i])
         for j := 0; j < len(weight); j++ {
@@ -89,8 +91,8 @@ func (layer *Layer) backpropagate (input []float64, error []float64, rate float6
     return
 }
 
-func (net *Network) Train(input []float64, expected []float64, rate float64, accel float64) {
-    error := make([]float64, len(net.Output.value))
+func (net *Network) Train(input []Float, expected []Float, rate Float, accel Float) {
+    error := make([]Float, len(net.Output.value))
     for i := 0; i < len(error); i++ {
         error[i] = expected[i] - net.Output.value[i]
     }
@@ -120,12 +122,12 @@ func LoadNetwork(r io.Reader) *Network {
     return net
 }
 
-func MeanSquaredError (result []float64, expected []float64) float64 {
+func MeanSquaredError (result []Float, expected []Float) Float {
     sum := 0.0
     for i := 0; i < len(result); i++ {
-        sum += math.Pow(expected[i] - result[i], 2)
+        sum += math.Pow(float64(expected[i] - result[i]), 2)
     }
-    return sum / float64(len(result))
+    return Float(sum) / Float(len(result))
 }
 
 func SeedRandom () {

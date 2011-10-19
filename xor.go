@@ -8,22 +8,22 @@ import (
 func main () {
     neural.SeedRandom()
     const epsilon = 0.001
-    training := [][3]float64{{0.1, 0.1, 0.1}, {0.1, 0.9, 0.9}, {0.9, 0.1, 0.9}, {0.9, 0.9, 0.1}}
+    training := [][3]neural.Float{{0.1, 0.1, 0.1}, {0.1, 0.9, 0.9}, {0.9, 0.1, 0.9}, {0.9, 0.9, 0.1}}
     net := neural.NewNetwork(2, 3, 1)
-    epoch, best := 0, epsilon;
-    for ; best >= epsilon; epoch++ {
-        best = 0.0
+    epoch, worst := 0, neural.Float(epsilon);
+    for ; worst >= epsilon; epoch++ {
+        worst = 0.0
         for _, sample := range training {
             result := net.Activate(sample[0:2])
             net.Train(sample[0:2], sample[2:], 0.75, 0.5)
             err := neural.MeanSquaredError(result, sample[2:])
-            if err > best { best = err }
+            if err > worst { worst = err }
         }
         if epoch % 1000 == 0 {
-            fmt.Println("Epoch #", epoch, "@ MSE =", best)
+            fmt.Println("Epoch #", epoch, "@ MSE =", worst)
         }
     }
-    fmt.Println("Epoch #", epoch, "@ MSE =", best)
+    fmt.Println("Epoch #", epoch, "@ MSE =", worst)
     // fmt.Println(net)
     for _, sample := range training {
         result := net.Activate(sample[0:2])
