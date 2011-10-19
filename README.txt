@@ -12,7 +12,20 @@ certain threshold for all training examples. Doesn't take long at all on my
 laptop, though.
 
 The other example is `mnist.go`, which is designed to train on the MNIST
-handwritten digits dataset. It's still a work in progress.
+handwritten digits dataset. I've got it up to over 96% accuracy in a couple
+hundred epochs, like so:
+
+    $ wget -r -np -Agz http://yann.lecun.com/exdb/mnist/
+    $ mv yann.lecun/exdb/mnist/*.gz .
+    $ for i in *gz; do gunzip $i; done
+    $ make mnist
+    $ ./mnist -si train-images-idx3-ubyte \
+              -sl train-labels-idx1-ubyte \
+              -ti t10k-images-idx3-ubyte \
+              -tl t10k-labels-idx1-ubyte
+
+I'm sure this codebase could easily be made to do better. See
+http://yann.lecun.com/exdb/mnist/ for more details on the dataset.
 
 The `niceidea.go` file contains a sketch of a neural network parallelized in
 goroutines. It doesn't work. And my attempt to parallelize `neural.go`
