@@ -32,7 +32,7 @@ Public Domain; do what you like with it. It is not guaranteed to work or to be
 useful for any purpose. Patches welcome!
 
 SDE
+
 San Francisco, CA
 
-Written 2011/10/16
-Updated 2013/10/04
+Written 2011/10/16, updated 2013/10/04
