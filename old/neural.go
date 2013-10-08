@@ -14,7 +14,6 @@ type Float float32
 type Layer struct {
 	Weight [][]Float
 	Bias   []Float
-	delta  [][]Float
 	value  []Float
 }
 
@@ -33,10 +32,6 @@ func randomWeight() Float {
 
 func (layer *Layer) initialize() {
 	layer.value = make([]Float, len(layer.Weight))
-	layer.delta = make([][]Float, len(layer.Weight))
-	for i := 0; i < len(layer.delta); i++ {
-		layer.delta[i] = make([]Float, len(layer.Weight[0]))
-	}
 }
 
 func newLayer(inputs int, nodes int) (layer *Layer) {
@@ -82,26 +77,25 @@ func (net *Network) Activate(input []Float) (result []Float) {
 	return
 }
 
-func (layer *Layer) backpropagate(input []Float, error []Float, rate Float, accel Float) (residual []Float) {
+func (layer *Layer) backpropagate(input []Float, err []Float, rate Float, accel Float) (residual []Float) {
 	residual = make([]Float, len(layer.Weight[0]))
 	for i, weight := range layer.Weight {
-		delta := error[i] * layer.value[i] * (1.0 - layer.value[i])
+		cost := err[i] * layer.value[i] * (1.0 - layer.value[i])
 		for j := 0; j < len(weight); j++ {
-			residual[j] += delta * weight[j]
-			layer.delta[i][j] = rate*delta*input[j] + accel*layer.delta[i][j]
-			weight[j] += layer.delta[i][j]
+			residual[j] += cost * weight[j]
+			weight[j] += rate * cost * input[j]
 		}
-		layer.Bias[i] += rate * delta
+		layer.Bias[i] += rate * cost
 	}
 	return
 }
 
 func (net *Network) Train(input []Float, expected []Float, rate Float, accel Float) {
-	error := make([]Float, len(net.Output.value))
-	for i := 0; i < len(error); i++ {
-		error[i] = expected[i] - net.Output.value[i]
+	err := make([]Float, len(net.Output.value))
+	for i := 0; i < len(err); i++ {
+		err[i] = expected[i] - net.Output.value[i]
 	}
-	residual := net.Output.backpropagate(net.Hidden.value, error, rate, accel)
+	residual := net.Output.backpropagate(net.Hidden.value, err, rate, accel)
 	net.Hidden.backpropagate(input, residual, rate, accel)
 }
 
