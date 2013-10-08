@@ -39,12 +39,12 @@ func (layer *LinearLayer) Train(cost matrix.MatrixRO) (residual matrix.MatrixRO)
     var err error
     var weight_gradient matrix.Matrix
     // dC/dx = transpose(W) x dC/d(f(x)) 
-    residual, err = layer.weights.Transpose().Times(cost)
+    residual, err = matrix.Transpose(layer.weights).Times(cost)
     if err != nil {
         panic(err)
     }
     // dC/dW = dC/d(f(x)) x transpose(x)
-    weight_gradient, err = cost.Times(layer.input.DenseMatrix().Transpose())
+    weight_gradient, err = cost.Times(matrix.Transpose(layer.input))
     if err != nil {
         panic(err)
     }
