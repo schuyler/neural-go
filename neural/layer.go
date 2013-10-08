@@ -21,10 +21,10 @@ func initialize() {
     rand.Seed(time.Now().UTC().UnixNano())
 }
 
-func (layer *layerBase) MeanSquaredError(expected matrix.MatrixRO) (float64) {
+func (layer *layerBase) MeanSquaredError(expected matrix.MatrixRO) (float64, error) {
     delta, err := layer.output.Minus(expected)
     if err != nil {
-        panic(err)
+        return 0.0, err
     }
     squared_error := 0.0
     for i := 0; i < delta.Rows(); i++ {
@@ -33,5 +33,5 @@ func (layer *layerBase) MeanSquaredError(expected matrix.MatrixRO) (float64) {
             squared_error += value * value
         }
     }
-    return squared_error / float64(delta.NumElements())
+    return squared_error / float64(delta.NumElements()), nil
 }
