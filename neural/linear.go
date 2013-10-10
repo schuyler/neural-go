@@ -35,7 +35,7 @@ func (layer *LinearLayer) Activate(input matrix.MatrixRO) (output matrix.MatrixR
     return
 }
 
-func (layer *LinearLayer) Train(cost matrix.MatrixRO) (residual matrix.MatrixRO) {
+func (layer *LinearLayer) Train(cost matrix.MatrixRO, rate float64) (residual matrix.MatrixRO) {
     var err error
     var weight_gradient matrix.Matrix
     // dC/dx = transpose(W) x dC/d(f(x)) 
@@ -49,7 +49,7 @@ func (layer *LinearLayer) Train(cost matrix.MatrixRO) (residual matrix.MatrixRO)
         panic(err)
     }
     // scale the gradient by the learning rate and update the weights
-    weight_gradient.Scale(layer.rate)
+    weight_gradient.Scale(rate)
     err = layer.weights.Add(weight_gradient)
     if err != nil {
         panic(err)

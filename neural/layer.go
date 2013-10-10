@@ -11,9 +11,13 @@ type Layer interface {
     Activate(input matrix.Matrix) (result matrix.Matrix)
 }
 
-type layerBase struct {
+type Datum struct {
     input matrix.MatrixRO
     output matrix.MatrixRO
+}
+
+type layerBase struct {
+    Datum
     rate float64
 }
 
