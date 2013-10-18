@@ -2,52 +2,52 @@ package neural
 
 import (
     "github.com/skelterjohn/go.matrix"
+    "fmt"
 )
 
-type LinearLayer struct {
+type Linear struct {
     weights *matrix.DenseMatrix
     bias *matrix.DenseMatrix
     layerBase
 }
 
-func MakeLinearLayer(inputs, outputs int) (layer *LinearLayer) {
-    return &LinearLayer{
-        weights: matrix.Normals(inputs, outputs), 
-        bias: matrix.Normals(1, outputs)}
+func LinearLayer(inputs, outputs int) (layer *Linear) {
+    return &Linear{
+        weights: matrix.Normals(outputs, inputs), 
+        bias: matrix.Normals(outputs, 1)}
 }
 
-func (layer *LinearLayer) Activate(input matrix.MatrixRO) (matrix.MatrixRO, error) {
-    var product, output matrix.Matrix
+func (layer *Linear) Activate(input matrix.MatrixRO) (matrix.MatrixRO, error) {
+    var output matrix.Matrix
     var err error
-    layer.input = input
+    layer.input = matrix.MakeDenseCopy(input)
     // f(x) = W * x + b  
-    product, err = input.Times(layer.weights)
+    output, err = layer.weights.Times(input)
     if err != nil {
         return nil, err
     }
-    output, err = product.Plus(layer.bias)
+    err = output.Add(layer.bias)
     if err != nil {
         return nil, err
     }
-    layer.output = output
     return output, nil
 }
 
-func (layer *LinearLayer) Train(cost matrix.MatrixRO, rate float64) (residual matrix.MatrixRO, err error) {
+func (layer *Linear) Train(cost matrix.MatrixRO, rate float64) (residual matrix.MatrixRO, err error) {
     var weight_gradient matrix.Matrix
     // dC/dx = transpose(W) x dC/d(f(x)) 
-    residual, err = layer.weights.Times(cost)
+    residual, err = layer.weights.Transpose().Times(cost)
     if err != nil {
         return nil, err
     }
     // dC/dW = dC/d(f(x)) x transpose(x)
-    weight_gradient, err = cost.Times(layer.input)
+    weight_gradient, err = cost.Times(matrix.Transpose(layer.input))
     if err != nil {
         return nil, err
     }
     // scale the gradient by the learning rate and update the weights
     weight_gradient.Scale(rate)
-    err = layer.weights.Add(matrix.Transpose(weight_gradient))
+    err = layer.weights.Add(weight_gradient)
     if err != nil {
         return nil, err
     }
@@ -59,4 +59,8 @@ func (layer *LinearLayer) Train(cost matrix.MatrixRO, rate float64) (residual ma
         return nil, err
     }
     return residual, nil
+}
+
+func (layer *Linear) String() string {
+    return fmt.Sprintf("<Linear %v + %v>", layer.weights, layer.bias)
 }

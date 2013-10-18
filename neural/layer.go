@@ -16,11 +16,6 @@ type Datum struct {
     output matrix.MatrixRO
 }
 
-type layerBase struct {
-    Datum
-    rate float64
-}
-
 func initialize() {
     rand.Seed(time.Now().UTC().UnixNano())
 }
