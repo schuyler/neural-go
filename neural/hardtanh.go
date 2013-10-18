@@ -32,9 +32,7 @@ func (layer *HardTanh) Train(cost matrix.MatrixRO, rate float64) (residual matri
     rows, _ := output.GetSize()
     for i := 0; i < rows; i++ {
         v := layer.input.Get(i, 0)
-        if v < -1.0 {
-            output.Set(i, 0, 0.0)
-        } else if v > 1.0 {
+        if v < -1.0 || v > 1.0 {
             output.Set(i, 0, 0.0)
         }
     }
