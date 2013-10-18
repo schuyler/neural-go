@@ -8,7 +8,7 @@ import (
 type Linear struct {
     weights *matrix.DenseMatrix
     bias *matrix.DenseMatrix
-    layerBase
+    Datum
 }
 
 func LinearLayer(inputs, outputs int) (layer *Linear) {

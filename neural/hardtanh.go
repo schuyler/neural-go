@@ -5,7 +5,7 @@ import (
 )
 
 type HardTanh struct {
-    layerBase
+    Datum
 }
 
 func HardTanhLayer(inputs int) (layer *HardTanh) {

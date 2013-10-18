@@ -20,8 +20,8 @@ func initialize() {
     rand.Seed(time.Now().UTC().UnixNano())
 }
 
-func (layer *layerBase) MeanSquaredError(expected matrix.MatrixRO) (float64, error) {
-    delta, err := layer.output.Minus(expected)
+func MeanSquaredError(expected, observed matrix.MatrixRO) (float64, error) {
+    delta, err := expected.Minus(observed)
     if err != nil {
         return 0.0, err
     }
