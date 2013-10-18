@@ -14,25 +14,31 @@ func HardTanhLayer(inputs int) (layer *HardTanh) {
 
 func (layer *HardTanh) Activate(input matrix.MatrixRO) (matrix.MatrixRO, error) {
     layer.input = matrix.MakeDenseCopy(input)
-    return layer.computeHardTanh(input), nil
+    output := matrix.MakeDenseCopy(input)
+    rows, _ := output.GetSize()
+    for i := 0; i < rows; i++ {
+        v := layer.input.Get(i, 0)
+        if v < -1.0 {
+            output.Set(i, 0, -1.0)
+        } else if v > 1.0 {
+            output.Set(i, 0, 1.0)
+        }
+    }
+    return output, nil
 }
 
 func (layer *HardTanh) Train(cost matrix.MatrixRO, rate float64) (residual matrix.MatrixRO, err error) {
-    return layer.computeHardTanh(cost), nil
-}
-   
-func (layer *HardTanh) computeHardTanh(vector matrix.MatrixRO) matrix.MatrixRO {
-    output := matrix.MakeDenseCopy(vector)
+    output := matrix.MakeDenseCopy(cost)
     rows, _ := output.GetSize()
     for i := 0; i < rows; i++ {
-        v := layer.input.Get(i, 1)
+        v := layer.input.Get(i, 0)
         if v < -1.0 {
-            output.Set(i, 1, -1.0)
+            output.Set(i, 0, 0.0)
         } else if v > 1.0 {
-            output.Set(i, 1, 1.0)
+            output.Set(i, 0, 0.0)
         }
     }
-    return output
+    return output, nil
 }
 
 func String() string {
