@@ -1,64 +1,47 @@
 package neural
 
 import (
-    "github.com/skelterjohn/go.matrix"
+    . "code.google.com/p/biogo.matrix"
+    "math/rand"
     "fmt"
 )
 
 type Linear struct {
-    weights *matrix.DenseMatrix
-    bias *matrix.DenseMatrix
+    weights *Dense
+    bias *Dense
     Datum
 }
 
+func randomWeight () float64 {
+    return rand.Float64() * 2 - 1.0
+}
+
 func LinearLayer(inputs, outputs int) (layer *Linear) {
-    return &Linear{
-        weights: matrix.Normals(outputs, inputs), 
-        bias: matrix.Normals(outputs, 1)}
+    weights, _ := FuncDense(outputs, inputs, 1.0, randomWeight)
+    bias, _ := FuncDense(outputs, 1, 1.0, randomWeight)
+    return &Linear{weights: weights, bias: bias}
 }
 
-func (layer *Linear) Activate(input matrix.MatrixRO) (matrix.MatrixRO, error) {
-    var output matrix.Matrix
-    var err error
-    layer.input = matrix.MakeDenseCopy(input)
+func (layer *Linear) Activate(input Matrix) Matrix {
+    layer.input = input
     // f(x) = W * x + b  
-    output, err = layer.weights.Times(input)
-    if err != nil {
-        return nil, err
-    }
-    err = output.Add(layer.bias)
-    if err != nil {
-        return nil, err
-    }
-    return output, nil
+    output := layer.weights.MulElem(input, nil)
+    return output.Add(layer.bias, output)
 }
 
-func (layer *Linear) Train(cost matrix.MatrixRO, rate float64) (residual matrix.MatrixRO, err error) {
-    var weight_gradient matrix.Matrix
+func (layer *Linear) Train(cost Matrix, rate float64) (residual Matrix) {
     // dC/dx = transpose(W) x dC/d(f(x)) 
-    residual, err = layer.weights.Transpose().Times(cost)
-    if err != nil {
-        return nil, err
-    }
-    // dC/dW = dC/d(f(x)) x transpose(x)
-    weight_gradient, err = cost.Times(matrix.Transpose(layer.input))
-    if err != nil {
-        return nil, err
-    }
+    weightsT := layer.weights.T(nil)
+    residual = weightsT.MulElem(cost, nil)
+    weightGradient := cost.MulElem(weightsT, weightsT) // reuse weightsT
     // scale the gradient by the learning rate and update the weights
-    weight_gradient.Scale(rate)
-    err = layer.weights.Add(weight_gradient)
-    if err != nil {
-        return nil, err
-    }
+    weightGradient.Scalar(rate, weightGradient)
+    layer.weights.Add(weightGradient, layer.weights)
     // dC/db = dC/d(f(x)) ... which is just the cost
     // scale the gradient by the learning rate and update the bias
-    bias_gradient := matrix.Scaled(cost, rate)
-    err = layer.bias.Add(bias_gradient)
-    if err != nil {
-        return nil, err
-    }
-    return residual, nil
+    bias_gradient := cost.Scalar(rate, cost) // reuse cost
+    layer.bias.Add(bias_gradient, layer.bias)
+    return
 }
 
 func (layer *Linear) String() string {

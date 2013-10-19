@@ -3,34 +3,31 @@ package neural
 import (
     "time"
     "math/rand"
-    "github.com/skelterjohn/go.matrix"
+    . "code.google.com/p/biogo.matrix"
 )
 
 type Layer interface {
-    Train(input matrix.Matrix, err matrix.Matrix) (residual matrix.Matrix)
-    Activate(input matrix.Matrix) (result matrix.Matrix)
+    Train(input Matrix) (residual Matrix)
+    Activate(input Matrix) (result Matrix)
 }
 
 type Datum struct {
-    input matrix.MatrixRO
-    output matrix.MatrixRO
+    input Matrix
+    output Matrix
 }
 
-func initialize() {
+func init() {
     rand.Seed(time.Now().UTC().UnixNano())
 }
 
-func MeanSquaredError(expected, observed matrix.MatrixRO) (float64, error) {
-    delta, err := expected.Minus(observed)
-    if err != nil {
-        return 0.0, err
-    }
+func MeanSquaredError(expected, observed Matrix) float64 {
+    delta := expected.Sub(observed, nil)
     squared_error := 0.0
-    for i := 0; i < delta.Rows(); i++ {
-        for j := 0; j < delta.Cols(); j++ {
-            value := delta.Get(i, j)
-            squared_error += value * value
-        }
+    mse := func (r, c int, v float64) float64 { 
+        squared_error += v * v
+        return v
     }
-    return squared_error / float64(delta.NumElements()), nil
+    delta.Apply(mse, nil)
+    rows, cols := delta.Dims()
+    return squared_error / float64(rows * cols)
 }

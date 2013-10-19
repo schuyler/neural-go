@@ -2,7 +2,7 @@ package neural
 
 import (
     . "github.com/smartystreets/goconvey/convey"
-    "github.com/skelterjohn/go.matrix"
+    "code.google.com/p/biogo.matrix"
     "testing"
 )
 
@@ -17,12 +17,11 @@ func TestHardTanh (t *testing.T) {
 func TestHardTanhActivate (t *testing.T) {
     Convey("When activating a HardTanhLayer", t, func() {
         layer := HardTanhLayer(4)
-        input := matrix.MakeDenseMatrix([]float64{-2.0, -0.5, 0.5, 2.0}, 4, 1)
-        expected := matrix.MakeDenseMatrix([]float64{-1.0, -0.5, 0.5, 1.0}, 4, 1)
+        input, _ := matrix.NewDense([][]float64{{-2.0, -0.5, 0.5, 2.0}})
+        expected, _ := matrix.NewDense([][]float64{{-1.0, -0.5, 0.5, 1.0}})
         Convey("the output should be the input with a 'HardTanh' applied", func() {
-            output, err := layer.Activate(input)
-            So(err, ShouldBeNil)
-            rows, cols := output.GetSize()
+            output := layer.Activate(input)
+            rows, cols := output.Dims()
             So(rows, ShouldEqual, 4)
             So(cols, ShouldEqual, 1)
             So(output, ShouldResemble, expected)
@@ -33,16 +32,13 @@ func TestHardTanhActivate (t *testing.T) {
 func TestHardTanhTrain (t *testing.T) {
     Convey("When training a HardTanhLayer", t, func() {
         layer := HardTanhLayer(4)
-        input := matrix.MakeDenseMatrix([]float64{-2.0, -0.5, 0.5, 2.0}, 4, 1)
-        cost := matrix.MakeDenseMatrix([]float64{0.1, 0.2, 0.3, 0.4}, 4, 1)
-        expected := matrix.MakeDenseMatrix([]float64{0.0, 0.2, 0.3, 0.0}, 4, 1)
+        input, _ := matrix.NewDense([][]float64{{-2.0, -0.5, 0.5, 2.0}})
+        cost, _ := matrix.NewDense([][]float64{{0.1, 0.2, 0.3, 0.4}})
+        expected, _ := matrix.NewDense([][]float64{{0.0, 0.2, 0.3, 0.0}})
 
         Convey("the residual should be the cost with a 'HardTanh' applied based on the input", func() {
-            var residual matrix.MatrixRO
-            _, err := layer.Activate(input)
-            So(err, ShouldBeNil)
-            residual, err = layer.Train(cost, 1.0)
-            So(err, ShouldBeNil)
+            layer.Activate(input)
+            residual := layer.Train(cost, 1.0)
             So(residual, ShouldResemble, expected)
         })
     })
